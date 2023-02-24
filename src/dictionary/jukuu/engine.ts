@@ -1,89 +1,56 @@
 import {
     HTMLString,
-    getText,
-    getInnerHTML,
     handleNoResult,
     handleNetWorkError,
     SearchFunction,
     GetSrcPageFunction,
-    removeChildren,
-    fetchDirtyDOM,
-    DictSearchResult
+    DictSearchResult,
+    fetchDirtyDOM
 } from '../helpers';
 
-export type JukuuLang = 'engjp' | 'zhjp' | 'zheng';
-
-function getUrl(text: string, lang: JukuuLang) {
+function getUrl(text: string) {
     text = encodeURIComponent(text.replace(/\s+/g, '+'));
-
-    switch (lang) {
-        case 'engjp':
-            return 'http://www.jukuu.com/jsearch.php?q=' + text;
-        case 'zhjp':
-            return 'http://www.jukuu.com/jcsearch.php?q=' + text;
-        // case 'zheng':
-        default:
-            return 'http://www.jukuu.com/search.php?q=' + text;
-    }
+    return "https://www.etymonline.com/word/" + text;
 }
 
 export const getSrcPage: GetSrcPageFunction = (text) => {
-    return getUrl(text, "zheng");
+    return getUrl(text);
 };
 
-interface JukuuTransItem {
-    trans: HTMLString;
-    original: string;
-    src: string;
+type EtymonlineSearchResult = DictSearchResult<etymonlineResult>;
+
+export interface etymonlineResult {
+    content: HTMLString[];//主内容
+    relate: HTMLString[];//相关内容
 }
 
-export interface JukuuResult {
-    lang: JukuuLang;
-    sens: JukuuTransItem[];
-}
-
-export interface JukuuPayload {
-    lang?: JukuuLang;
-}
-
-type JukuuSearchResult = DictSearchResult<JukuuResult>;
-
-export const search: SearchFunction<JukuuResult> = (
+export const search = (
     text: string,
 ) => {
-    const lang = "zheng";
     return fetchDirtyDOM(getSrcPage(text))
         .catch(handleNetWorkError)
         .then(handleDOM)
-        .then(sens =>
-            sens.length > 0 ? { result: { lang, sens } } : handleNoResult()
-        );
+        .catch(handleNoResult);
 };
 
-function handleDOM(doc: DocumentFragment): JukuuTransItem[] {
-    return [...doc.querySelectorAll('tr.e')]
-        .map($e => {
-            const $trans = $e.lastElementChild;
-            if (!$trans) {
-                return;
-            }
-            removeChildren($trans, 'img');
-
-            const $original = $e.nextElementSibling;
-            if (!$original || !$original.classList.contains('c')) {
-                return;
-            }
-
-            const $src = $original.nextElementSibling;
-
-            return {
-                trans: getInnerHTML('http://www.jukuu.com', $trans),
-                original: getText($original),
-                src:
-                    $src && $src.classList.contains('s')
-                        ? getText($src).replace(/^[\s-]*/, '')
-                        : ''
-            };
-        })
-        .filter((item): item is JukuuTransItem => Boolean(item && item.trans));
+function handleDOM(doc: DocumentFragment): EtymonlineSearchResult {
+    const result: etymonlineResult = {
+        content: [],
+        relate: [],
+    }
+    //获取页面主要内容
+    const contentNodes = doc.querySelectorAll(".word--C9UPa:not(.word--C9UPa.word_4pc--2SZw8)");
+    [...contentNodes].forEach(node => {
+        let container = document.createElement('div');
+        container.appendChild(node);
+        result.content.push(container["innerHTML"] as HTMLString);
+    });
+    //获取延伸内容
+    const relateNodes = doc.querySelectorAll(".word--C9UPa.word_4pc--2SZw8");
+    [...relateNodes].forEach(node => {
+        let container = document.createElement('div');
+        container.appendChild(node);
+        result.relate.push(container["innerHTML"] as HTMLString);
+    });
+    return { result };
 }

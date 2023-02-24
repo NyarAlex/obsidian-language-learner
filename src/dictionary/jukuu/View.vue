@@ -1,10 +1,14 @@
 <template>
     <div id="jukuu">
         <ul class="jukuu-sens">
-            <li class="jukuu-sen" v-for="sen in result.sens">
-                <p class="jukuu-trans" v-html="sen.trans"></p>
-                <p class="jukuu-ori">{{ sen.original }}</p>
-                <p class="jukuu-src">{{ sen.src }}</p>
+            <li class="jukuu-sen" v-for="item in result.content">
+                <p class="jukuu-trans" v-html="item"></p>
+            </li>
+        </ul>
+        <div>延伸内容：</div>
+        <ul class="jukuu-sens">
+            <li class="jukuu-sen" v-for="item in result.relate">
+                <p class="jukuu-trans" v-html="item"></p>
             </li>
         </ul>
     </div>
@@ -13,7 +17,7 @@
 <script setup lang="ts">
 import { reactive, watch } from "vue";
 import { useLoading } from "@dict/uses"
-import { search, JukuuResult } from "./engine";
+import { search, etymonlineResult } from "./engine";
 
 const props = defineProps<{
     word: string,
@@ -22,13 +26,17 @@ const emits = defineEmits<{
     (event: "loading", status: { id: string, loading: boolean, result: boolean; }): void;
 }>();
 
-let result = reactive<JukuuResult>({ lang: "zheng", sens: [] });
+let result = reactive<etymonlineResult>({ content: [], relate: [] });
 
 async function onSearch() {
+    debugger;
     let res = await search(props.word);
+    debugger;
     if (!res) return false;
 
-    result.sens = res.result.sens;
+    result.content = res.result.content;
+    result.relate = res.result.relate;
+    console.log(result);
     return true;
 }
 
@@ -50,15 +58,6 @@ useLoading(() => props.word, "jukuu", onSearch, emits)
                 b {
                     color: #f9690e
                 }
-            }
-
-            .jukuu-ori {
-                color: olive
-            }
-
-            .jukuu-src {
-                font-size: 0.9em;
-                text-align: right;
             }
         }
     }
