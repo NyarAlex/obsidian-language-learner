@@ -353,11 +353,15 @@ export default class LanguageLearner extends Plugin {
         }
 
         data.sort((a, b) => a.expression.localeCompare(b.expression));
-
         let newText = data.map((word) => {
             let notes = word.notes.length === 0
                 ? ""
                 : "**Notes**:\n" + word.notes.join("\n").trim() + "\n";
+            //将第一个例句放到复习卡片的正面
+            const firstSentence=word.sentences.length === 0
+                ? ""
+                :word.sentences[0].text.trim()+"\n";
+
             let sentences = word.sentences.length === 0
                 ? ""
                 : "**Sentences**:\n" +
@@ -372,6 +376,7 @@ export default class LanguageLearner extends Plugin {
             return (
                 `#word\n` +
                 `#### ${word.expression}\n` +
+                `${firstSentence}` +
                 `${this.settings.review_delimiter}\n` +
                 `${word.meaning}\n` +
                 `${notes}` +
