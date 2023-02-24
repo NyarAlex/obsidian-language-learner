@@ -41,14 +41,14 @@ function handleDOM(doc: DocumentFragment): EtymonlineSearchResult {
     //获取页面主要内容
     const contentNodes = doc.querySelectorAll(".word--C9UPa:not(.word--C9UPa.word_4pc--2SZw8)");
     [...contentNodes].forEach(node => {
-        let container = document.createElement('div');
+        const container = document.createElement('div');
         container.appendChild(node);
         result.content.push(container["innerHTML"] as HTMLString);
     });
     //获取延伸内容
     const relateNodes = doc.querySelectorAll(".word--C9UPa.word_4pc--2SZw8");
     [...relateNodes].forEach(node => {
-        let container = document.createElement('div');
+        const container = document.createElement('div');
         container.appendChild(node);
         result.relate.push(container["innerHTML"] as HTMLString);
     });
